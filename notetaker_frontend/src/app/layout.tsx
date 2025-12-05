@@ -8,13 +8,13 @@ export const metadata: Metadata = {
   description: "Ocean Professional minimalist notetaking app",
   applicationName: "Collaborative Notes",
   authors: [{ name: "Notes Team" }],
-  themeColor: "#374151",
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
+  themeColor: "#374151",
 };
 
 export default function RootLayout({

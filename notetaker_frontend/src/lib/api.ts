@@ -1,3 +1,10 @@
+/**
+E2E Smoke Checklist (manual):
+- Create note: api.createNote({ title: "Untitled" }) -> navigate to /notes/:id
+- Edit: api.updateNote(id, { title, content }) -> refresh -> persistence confirmed
+- Search: api.listNotes({ q: "keyword" }) -> list shows filtered results
+- View history: verify updated_at changes after edit
+*/
 export type ListNotesParams = { q?: string; tag?: string };
 
 function getBaseUrl(): string {
