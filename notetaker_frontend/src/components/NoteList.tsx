@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
-import { api } from "@/lib/api";
+import { api, type PagedNotes } from "@/lib/api";
 
 export type Note = {
   id: string;
@@ -26,6 +26,7 @@ export default function NoteList() {
   /** Displays note list with search and tag filters. */
   const [loading, setLoading] = useState(false);
   const [notes, setNotes] = useState<Note[]>([]);
+  const [total, setTotal] = useState<number>(0);
   const [error, setError] = useState<string | null>(null);
 
   const pathname = usePathname();
@@ -39,17 +40,19 @@ export default function NoteList() {
       setLoading(true);
       setError(null);
       try {
-        const data = await api.listNotes({ q, tag });
+        const data: PagedNotes = await api.listNotes({ q, tag });
         if (!mounted) return;
-        // Normalize to array at the boundary as an extra guard
-        const safe = Array.isArray(data) ? data : [];
-        setNotes(safe);
+        // data is a paginated object: { items, total, ... }
+        const items = Array.isArray(data.items) ? data.items : [];
+        const totalVal = typeof data.total === "number" ? data.total : items.length;
+        setNotes(items as Note[]);
+        setTotal(totalVal);
       } catch (e) {
         if (!mounted) return;
         const msg = e instanceof Error ? e.message : "Failed to load notes";
         setError(msg);
-        // Ensure empty array to avoid render errors on failure state
         setNotes([]);
+        setTotal(0);
       } finally {
         if (mounted) setLoading(false);
       }
@@ -72,6 +75,9 @@ export default function NoteList() {
           {error}
         </div>
       ) : null}
+      <div className="muted text-xs" aria-live="polite">
+        {typeof total === "number" ? `Total: ${total}` : null}
+      </div>
       <ul role="list" className="grid gap-2">
         {items.map((n) => {
           const active = pathname === `/notes/${n.id}`;

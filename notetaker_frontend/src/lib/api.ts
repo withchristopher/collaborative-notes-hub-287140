@@ -46,14 +46,14 @@ async function http<T>(path: string, init?: RequestInit & { timeoutMs?: number }
 
   // Lightweight dev logging to help diagnose 405/URL issues without noisy production logs
   if (typeof window !== "undefined" && process.env.NODE_ENV !== "production") {
-    // eslint-disable-next-line no-console
+    const payloadPreview =
+      init?.body && typeof init.body === "string" ? init.body.slice(0, 200) : undefined;
+    // using console.debug is acceptable in development contexts
+    // eslint-disable-next-line no-restricted-syntax
     console.debug("[api] request", {
       method: init?.method || "GET",
       url,
-      payloadPreview:
-        init?.body && typeof init.body === "string"
-          ? init.body.slice(0, 200)
-          : undefined,
+      payloadPreview,
     });
   }
 
