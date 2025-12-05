@@ -70,8 +70,22 @@ export default function NoteEditor({ noteId, initialNote }: Props) {
     // Only fire when there's pending dirty fields
     const isDirty = !!dirtyFields.title || !!dirtyFields.content;
     if (!isDirty) return;
+
+    // If currently saving or we just saved recently, skip scheduling a blur save
+    const now = Date.now();
+    if (saving || now - lastSaveAtRef.current < MIN_SAVE_INTERVAL_MS) {
+      // eslint-disable-next-line no-console
+      console.debug("[NoteEditor] skip blur save (saving or recently saved)", {
+        saving,
+        sinceLast: now - lastSaveAtRef.current,
+      });
+      return;
+    }
+
     if (blurDebounceRef.current) window.clearTimeout(blurDebounceRef.current);
     blurDebounceRef.current = window.setTimeout(() => {
+      // eslint-disable-next-line no-console
+      console.debug("[NoteEditor] blur debounced save firing");
       void doSave({});
     }, BLUR_DEBOUNCE_MS);
   };
@@ -79,12 +93,25 @@ export default function NoteEditor({ noteId, initialNote }: Props) {
   async function doSave(patch: Partial<Note>) {
     if (!note) return;
 
+    // Clear any pending blur-save to avoid duplicate PUTs when user clicks Save
+    if (blurDebounceRef.current) {
+      window.clearTimeout(blurDebounceRef.current);
+      blurDebounceRef.current = null;
+    }
+
     // Prevent rapid consecutive saves
     const now = Date.now();
     if (now - lastSaveAtRef.current < MIN_SAVE_INTERVAL_MS) {
+      // eslint-disable-next-line no-console
+      console.debug("[NoteEditor] save suppressed by min interval guard", {
+        sinceLast: now - lastSaveAtRef.current,
+      });
       return; // silently ignore rapid clicks to avoid accidental spam
     }
     lastSaveAtRef.current = now;
+
+    // eslint-disable-next-line no-console
+    console.debug("[NoteEditor] doSave invoked", { patchKeys: Object.keys(patch || {}) });
 
     setSaving(true);
     setError(null);
@@ -175,7 +202,16 @@ export default function NoteEditor({ noteId, initialNote }: Props) {
           ) : null}
           <button
             className="button primary"
-            onClick={() => void doSave({})}
+            onClick={() => {
+              // Cancel any scheduled blur save before manual save to prevent double PUT
+              if (blurDebounceRef.current) {
+                window.clearTimeout(blurDebounceRef.current);
+                blurDebounceRef.current = null;
+              }
+              // eslint-disable-next-line no-console
+              console.debug("[NoteEditor] manual Save clicked");
+              void doSave({});
+            }}
             disabled={saving || isPending}
             aria-disabled={saving || isPending}
             aria-label="Save note"
