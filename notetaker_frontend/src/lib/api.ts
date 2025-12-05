@@ -97,29 +97,19 @@ type CreateNotePayload = {
 };
 
 async function listNotes(params: ListNotesParams = {}): Promise<Note[]> {
+  // Backend expects search and tags (tags can be repeated). Map q/tag from UI to backend names.
   const usp = new URLSearchParams();
-  if (params.q) usp.set("q", params.q);
-  if (params.tag) usp.set("tag", params.tag);
+  if (params.q) usp.set("search", params.q);
+  if (params.tag) usp.append("tags", params.tag);
   const qs = usp.toString();
 
-  // Fetch raw response; backend may return either:
-  // - Note[] (array)
-  // - { items: Note[], total?: number } (object wrapper)
+  // Fetch raw response; backend returns a PagedNotes object: { items: Note[], total, page, page_size }
   const raw = await http<unknown>(`/notes${qs ? `?${qs}` : ""}`, { method: "GET" });
 
-  // Types to help with safe narrowing
   type UnknownRecord = Record<string, unknown>;
   type NoteLike = UnknownRecord;
 
-  // Normalize to Note[] defensively at runtime
   try {
-    if (Array.isArray(raw)) {
-      // Ensure elements are objects with id field, filter out invalid entries
-      const arr = (raw as unknown[]).filter(
-        (x): x is NoteLike => !!x && typeof x === "object" && "id" in (x as UnknownRecord)
-      );
-      return arr as unknown as Note[];
-    }
     if (raw && typeof raw === "object") {
       const obj = raw as UnknownRecord;
       const items = (obj as { items?: unknown }).items;
@@ -131,9 +121,8 @@ async function listNotes(params: ListNotesParams = {}): Promise<Note[]> {
       }
     }
   } catch {
-    // fall through to return empty array
+    // ignore and fall through
   }
-  // Fallback to empty list if shape not recognized
   return [];
 }
 
