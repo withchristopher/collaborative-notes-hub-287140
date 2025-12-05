@@ -96,7 +96,14 @@ type CreateNotePayload = {
   tags?: string[];
 };
 
-async function listNotes(params: ListNotesParams = {}): Promise<Note[]> {
+type PagedNotes = {
+  items: Note[];
+  total: number;
+  page?: number;
+  page_size?: number;
+};
+
+async function listNotes(params: ListNotesParams = {}): Promise<PagedNotes> {
   // Backend expects search and tags (tags can be repeated). Map q/tag from UI to backend names.
   const usp = new URLSearchParams();
   if (params.q) usp.set("search", params.q);
@@ -107,23 +114,27 @@ async function listNotes(params: ListNotesParams = {}): Promise<Note[]> {
   const raw = await http<unknown>(`/notes${qs ? `?${qs}` : ""}`, { method: "GET" });
 
   type UnknownRecord = Record<string, unknown>;
-  type NoteLike = UnknownRecord;
 
-  try {
-    if (raw && typeof raw === "object") {
-      const obj = raw as UnknownRecord;
-      const items = (obj as { items?: unknown }).items;
-      if (Array.isArray(items)) {
-        const filtered = items.filter(
-          (x): x is NoteLike => !!x && typeof x === "object" && "id" in (x as UnknownRecord)
-        );
-        return filtered as unknown as Note[];
-      }
-    }
-  } catch {
-    // ignore and fall through
+  const fallback: PagedNotes = { items: [], total: 0 };
+  if (raw && typeof raw === "object") {
+    const obj = raw as UnknownRecord;
+    const totalVal = typeof obj.total === "number" ? obj.total : 0;
+    const page = typeof obj.page === "number" ? obj.page : undefined;
+    const page_size = typeof obj.page_size === "number" ? obj.page_size : undefined;
+    const itemsRaw = Array.isArray((obj as { items?: unknown }).items) ? (obj as { items: unknown[] }).items : [];
+
+    // Coerce tags to arrays
+    const items: Note[] = itemsRaw
+      .filter((it) => !!it && typeof it === "object" && "id" in (it as UnknownRecord))
+      .map((it) => {
+        const rec = it as UnknownRecord;
+        const tags = Array.isArray(rec.tags) ? (rec.tags as string[]) : [];
+        return { ...(rec as unknown as Note), tags };
+      });
+
+    return { items, total: totalVal, page, page_size };
   }
-  return [];
+  return fallback;
 }
 
 async function getNote(id: string): Promise<Note> {
@@ -159,6 +170,8 @@ export function getApiBase(): string {
 }
 
 // PUBLIC_INTERFACE
+export type { PagedNotes };
+
 export const api = {
   /** List notes with optional search and tag filters. */
   listNotes,
