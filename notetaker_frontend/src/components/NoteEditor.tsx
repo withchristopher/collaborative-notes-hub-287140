@@ -11,12 +11,30 @@ type Props = {
 
 // PUBLIC_INTERFACE
 export default function NoteEditor({ noteId, initialNote }: Props) {
-  /** Note editor with optimistic updates and last-edited display. */
+  /**
+   * Note editor with explicit save (no per-keystroke save). A generous blur debounce is used
+   * only when editor is dirty and an input loses focus. Includes a brief confirmation state and
+   * prevents rapid double-saves.
+   */
   const [note, setNote] = useState<Note | null>(initialNote || null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
-  const saveTimer = useRef<number | null>(null);
+
+  // UX: show a small confirmation after successful save
+  const [showSaved, setShowSaved] = useState(false);
+  const savedTimerRef = useRef<number | null>(null);
+
+  // Track dirty state to conditionally save on blur
+  const [dirtyFields, setDirtyFields] = useState<{ title?: boolean; content?: boolean }>({});
+
+  // Rapid-save guard: minimum interval between saves
+  const lastSaveAtRef = useRef<number>(0);
+  const MIN_SAVE_INTERVAL_MS = 1200;
+
+  // Debounce for blur actions only (>=1500ms requirement)
+  const blurDebounceRef = useRef<number | null>(null);
+  const BLUR_DEBOUNCE_MS = 1600;
 
   useEffect(() => {
     let mounted = true;
@@ -33,6 +51,8 @@ export default function NoteEditor({ noteId, initialNote }: Props) {
     load();
     return () => {
       mounted = false;
+      if (savedTimerRef.current) window.clearTimeout(savedTimerRef.current);
+      if (blurDebounceRef.current) window.clearTimeout(blurDebounceRef.current);
     };
   }, [noteId, initialNote]);
 
@@ -41,25 +61,49 @@ export default function NoteEditor({ noteId, initialNote }: Props) {
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       const value = e.target.value;
       setNote((prev) => (prev ? { ...prev, [field]: value } : prev));
-      // Debounce save
-      if (saveTimer.current) window.clearTimeout(saveTimer.current);
-      saveTimer.current = window.setTimeout(() => {
-        void save({ [field]: value } as Partial<Note>);
-      }, 500);
+      setDirtyFields((prev) => ({ ...prev, [field]: true }));
+      // No per-keystroke save
     };
 
-  async function save(patch: Partial<Note>) {
+  const maybeBlurSave = () => {
     if (!note) return;
+    // Only fire when there's pending dirty fields
+    const isDirty = !!dirtyFields.title || !!dirtyFields.content;
+    if (!isDirty) return;
+    if (blurDebounceRef.current) window.clearTimeout(blurDebounceRef.current);
+    blurDebounceRef.current = window.setTimeout(() => {
+      void doSave({});
+    }, BLUR_DEBOUNCE_MS);
+  };
+
+  async function doSave(patch: Partial<Note>) {
+    if (!note) return;
+
+    // Prevent rapid consecutive saves
+    const now = Date.now();
+    if (now - lastSaveAtRef.current < MIN_SAVE_INTERVAL_MS) {
+      return; // silently ignore rapid clicks to avoid accidental spam
+    }
+    lastSaveAtRef.current = now;
+
     setSaving(true);
     setError(null);
     const optimistic = { ...note, ...patch, updated_at: new Date().toISOString() };
     setNote(optimistic);
+
     try {
       const updated = await api.updateNote(noteId, patch);
-      // reconcile in transition to keep UI responsive
       startTransition(() => {
         setNote((prev) => ({ ...(prev || optimistic), ...(updated || {}) }));
       });
+
+      // Clear dirty flags since we've just saved the current content
+      setDirtyFields({});
+
+      // Show confirmation briefly
+      setShowSaved(true);
+      if (savedTimerRef.current) window.clearTimeout(savedTimerRef.current);
+      savedTimerRef.current = window.setTimeout(() => setShowSaved(false), 1500);
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Failed to save";
       setError(msg);
@@ -95,39 +139,57 @@ export default function NoteEditor({ noteId, initialNote }: Props) {
           {error}
         </div>
       ) : null}
+
+      {/* Editor toolbar area to better match the design reference */}
       <div className="flex items-center gap-2">
         <input
           className="input text-lg font-medium flex-1"
           value={note.title || ""}
           onChange={onChange("title")}
+          onBlur={maybeBlurSave}
           placeholder="Untitled"
           aria-label="Note title"
         />
-        <button
-          className="button"
-          onClick={() => void save({})}
-          disabled={saving || isPending}
-          aria-disabled={saving || isPending}
-        >
-          {saving ? "Saving…" : "Save"}
-        </button>
-        <button
-          className="button"
-          onClick={() => void destroy()}
-          aria-label="Delete note"
-        >
-          Delete
-        </button>
+        <div className="flex items-center gap-2">
+          {showSaved ? (
+            <span
+              className="text-xs text-green-700 px-2 py-1 rounded bg-green-50 border border-green-200"
+              role="status"
+              aria-live="polite"
+            >
+              Saved
+            </span>
+          ) : null}
+          <button
+            className="button primary"
+            onClick={() => void doSave({})}
+            disabled={saving || isPending}
+            aria-disabled={saving || isPending}
+            aria-label="Save note"
+          >
+            {saving ? "Saving…" : "Save"}
+          </button>
+          <button
+            className="button"
+            onClick={() => void destroy()}
+            aria-label="Delete note"
+          >
+            Delete
+          </button>
+        </div>
       </div>
+
       <div className="editor">
         <textarea
           className="w-full min-h-[50vh] p-4 outline-none"
           placeholder="Write your note…"
           value={note.content || ""}
           onChange={onChange("content")}
+          onBlur={maybeBlurSave}
           aria-label="Note content"
         />
       </div>
+
       <p className="muted text-xs">
         Last edited:{" "}
         {note.updated_at ? new Date(note.updated_at).toLocaleString() : "—"}

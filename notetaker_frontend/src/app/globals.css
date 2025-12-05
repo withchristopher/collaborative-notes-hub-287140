@@ -49,7 +49,7 @@ body {
 .topbar {
   height: 56px;
   border-bottom: 1px solid #e5e7eb;
-  background: rgba(255,255,255,0.9);
+  background: rgba(255,255,255,0.85);
   backdrop-filter: saturate(180%) blur(6px);
 }
 
@@ -59,8 +59,9 @@ body {
   background: white;
   color: var(--color-text);
   border-radius: var(--radius-sm);
-  padding: 0.5rem 0.75rem;
+  padding: 0.55rem 0.8rem;
   outline: none;
+  transition: border-color 120ms ease, box-shadow 120ms ease, background 120ms ease;
 }
 .input:focus {
   border-color: #93C5FD;
@@ -70,15 +71,20 @@ body {
 .button {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.5rem;
   border-radius: var(--radius-sm);
   padding: 0.5rem 0.75rem;
   border: 1px solid #e5e7eb;
   background: white;
   color: var(--color-primary);
+  transition: background 120ms ease, transform 60ms ease;
 }
 .button:hover {
   background: #F3F4F6;
+}
+.button:active {
+  transform: translateY(0.5px);
 }
 .button.primary {
   background: var(--color-accent);
@@ -86,7 +92,7 @@ body {
   color: white;
 }
 .button.primary:hover {
-  filter: brightness(0.95);
+  filter: brightness(0.96);
 }
 
 /* Lists */

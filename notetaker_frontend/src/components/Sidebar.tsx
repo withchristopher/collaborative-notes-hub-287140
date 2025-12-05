@@ -48,14 +48,16 @@ export default function Sidebar() {
       <Link
         href="/notes"
         className={classNames(
-          "button w-full justify-center primary",
+          "button w-full justify-center",
           pathname?.startsWith("/notes") ? "" : ""
         )}
+        aria-label="Create or view latest note"
+        title="New Note"
       >
         + New Note
       </Link>
 
-      <div className="mt-2">
+      <div className="mt-1">
         <p className="text-xs uppercase tracking-wide text-gray-500 mb-2">
           Navigation
         </p>

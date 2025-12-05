@@ -12,11 +12,27 @@ export default function NotesClient() {
   const router = useRouter();
   const params = useSearchParams();
 
+  function getDefaultTitle(): string {
+    // Example format: 'Friday - 2025-12-05 - 12:27' (24-hour local time)
+    const d = new Date();
+    const day = d.toLocaleDateString(undefined, { weekday: "long" });
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    const hh = String(d.getHours()).padStart(2, "0");
+    const mi = String(d.getMinutes()).padStart(2, "0");
+    return `${day} - ${yyyy}-${mm}-${dd} - ${hh}:${mi}`;
+  }
+
   const onCreate = async () => {
     setCreating(true);
     try {
       const tag = params.get("tag") || undefined;
-      const note = await api.createNote({ title: "Untitled", content: "", tags: tag ? [tag] : [] });
+      const note = await api.createNote({
+        title: getDefaultTitle(),
+        content: "",
+        tags: tag ? [tag] : [],
+      });
       router.push(`/notes/${note.id}`);
     } finally {
       setCreating(false);

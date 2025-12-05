@@ -8,7 +8,7 @@ import { getSupabaseClient } from "@/lib/supabaseClient";
 
 // PUBLIC_INTERFACE
 export default function Header() {
-  /** Top header with search input and account menu (logout) when authenticated. */
+  /** Top header with search input and account menu (logout) when authenticated. Styled to Ocean Professional. */
   const router = useRouter();
   const params = useSearchParams();
   const [q, setQ] = useState(params.get("q") || "");
@@ -35,8 +35,8 @@ export default function Header() {
   };
 
   return (
-    <header className="h-full flex items-center justify-between px-4">
-      <form onSubmit={onSubmit} role="search" className="flex-1 max-w-xl">
+    <header className="h-full flex items-center justify-between px-5">
+      <form onSubmit={onSubmit} role="search" className="flex-1 max-w-2xl">
         <label htmlFor="search" className="sr-only">
           Search notes
         </label>
@@ -50,8 +50,8 @@ export default function Header() {
           aria-label="Search notes"
         />
       </form>
-      <div className="flex items-center gap-3">
-        <Link className="button" href="/notes">
+      <div className="flex items-center gap-2">
+        <Link className="button" href="/notes" aria-label="Go to notes list">
           Notes
         </Link>
         {supabaseAvailable ? (
@@ -60,10 +60,12 @@ export default function Header() {
               <span className="text-sm muted max-w-[180px] truncate" title={user.email || ""}>
                 {user.email}
               </span>
-              <button className="button" onClick={() => void onLogout()}>Logout</button>
+              <button className="button" onClick={() => void onLogout()} aria-label="Logout">
+                Logout
+              </button>
             </div>
           ) : (
-            <Link className="button" href="/auth">
+            <Link className="button" href="/auth" aria-label="Sign in">
               Sign In
             </Link>
           )
