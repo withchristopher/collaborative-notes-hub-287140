@@ -141,7 +141,7 @@ export default function NoteEditor({ noteId, initialNote }: Props) {
       ) : null}
 
       {/* Editor toolbar area to better match the design reference */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 py-1">
         <input
           className="input text-lg font-medium flex-1"
           value={note.title || ""}

@@ -127,8 +127,9 @@ async function createNote(payload: CreateNotePayload): Promise<Note> {
 }
 
 async function updateNote(id: string, payload: UpdateNotePayload): Promise<Note> {
+  // Backend expects PUT /notes/{id} with NoteUpdate (partial fields allowed)
   return http<Note>(`/notes/${encodeURIComponent(id)}`, {
-    method: "PATCH",
+    method: "PUT",
     body: JSON.stringify(payload),
   });
 }
