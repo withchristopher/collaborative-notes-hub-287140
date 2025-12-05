@@ -88,11 +88,24 @@ export default function NoteEditor({ noteId, initialNote }: Props) {
 
     setSaving(true);
     setError(null);
-    const optimistic = { ...note, ...patch, updated_at: new Date().toISOString() };
+
+    // Always send current title and content to ensure persistence even if caller passed {}
+    const payload: Partial<Note> = {
+      title: typeof patch.title !== "undefined" ? patch.title : note.title,
+      content: typeof patch.content !== "undefined" ? patch.content : note.content,
+      // Only include tags if explicitly provided in patch; otherwise keep existing on server
+      ...(typeof patch.tags !== "undefined" ? { tags: patch.tags } : {}),
+    };
+
+    const optimistic = { ...note, ...payload, updated_at: new Date().toISOString() };
     setNote(optimistic);
 
     try {
-      const updated = await api.updateNote(noteId, patch);
+      const updated = await api.updateNote(noteId, {
+        title: payload.title,
+        content: payload.content,
+        ...(typeof payload.tags !== "undefined" ? { tags: payload.tags } : {}),
+      });
       startTransition(() => {
         setNote((prev) => ({ ...(prev || optimistic), ...(updated || {}) }));
       });
