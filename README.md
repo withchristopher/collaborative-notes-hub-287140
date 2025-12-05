@@ -1,1 +1,3 @@
-# collaborative-notes-hub-287140
+# Project Repository
+
+This is the initial README file for the project.
