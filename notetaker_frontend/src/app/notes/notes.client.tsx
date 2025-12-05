@@ -16,7 +16,7 @@ export default function NotesClient() {
     setCreating(true);
     try {
       const tag = params.get("tag") || undefined;
-      const note = await api.createNote({ title: "Untitled", tags: tag ? [tag] : [] });
+      const note = await api.createNote({ title: "Untitled", content: "", tags: tag ? [tag] : [] });
       router.push(`/notes/${note.id}`);
     } finally {
       setCreating(false);

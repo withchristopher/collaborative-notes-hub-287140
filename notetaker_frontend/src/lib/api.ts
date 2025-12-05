@@ -64,6 +64,13 @@ export type Note = {
 
 type UpdateNotePayload = Partial<Pick<Note, "title" | "content" | "tags">>;
 
+// CreateNote payload must include content per backend NoteIn schema
+type CreateNotePayload = {
+  title: string;
+  content: string;
+  tags?: string[];
+};
+
 async function listNotes(params: ListNotesParams = {}): Promise<Note[]> {
   const usp = new URLSearchParams();
   if (params.q) usp.set("q", params.q);
@@ -109,8 +116,14 @@ async function getNote(id: string): Promise<Note> {
   return http<Note>(`/notes/${encodeURIComponent(id)}`, { method: "GET" });
 }
 
-async function createNote(payload: UpdateNotePayload = {}): Promise<Note> {
-  return http<Note>(`/notes`, { method: "POST", body: JSON.stringify(payload) });
+async function createNote(payload: CreateNotePayload): Promise<Note> {
+  // Minimal guard to ensure backend-required content is not undefined
+  const safePayload: CreateNotePayload = {
+    title: payload.title,
+    content: typeof payload.content === "string" ? payload.content : "",
+    tags: Array.isArray(payload.tags) ? payload.tags : [],
+  };
+  return http<Note>(`/notes`, { method: "POST", body: JSON.stringify(safePayload) });
 }
 
 async function updateNote(id: string, payload: UpdateNotePayload): Promise<Note> {
@@ -130,7 +143,7 @@ export const api = {
   listNotes,
   /** Get a single note by id. */
   getNote,
-  /** Create a note. */
+  /** Create a note with required content field. */
   createNote,
   /** Update a note with partial payload. */
   updateNote,
