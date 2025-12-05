@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
+import { useAuth } from "./AuthProvider";
 
 type Tag = { id: string; name: string; count?: number };
 
@@ -16,6 +17,7 @@ export default function Sidebar() {
   const pathname = usePathname();
   const [tags, setTags] = useState<Tag[]>([]);
   const [loading, setLoading] = useState(false);
+  const { supabaseAvailable, user } = useAuth();
 
   useEffect(() => {
     let mounted = true;
@@ -105,7 +107,18 @@ export default function Sidebar() {
       </div>
 
       <div className="mt-auto pt-4 border-t border-gray-200">
-        <p className="text-xs text-gray-500">Ocean Professional</p>
+        <p className="text-xs text-gray-500">
+          Ocean Professional
+          {supabaseAvailable ? (
+            user ? (
+              <span className="block text-[10px] text-gray-400 mt-1">Signed in</span>
+            ) : (
+              <span className="block text-[10px] text-gray-400 mt-1">Auth enabled</span>
+            )
+          ) : (
+            <span className="block text-[10px] text-gray-400 mt-1">Auth disabled</span>
+          )}
+        </p>
       </div>
     </nav>
   );

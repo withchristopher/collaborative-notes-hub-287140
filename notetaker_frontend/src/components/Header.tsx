@@ -3,13 +3,17 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect } from "react";
+import { useAuth } from "./AuthProvider";
+import { getSupabaseClient } from "@/lib/supabaseClient";
 
 // PUBLIC_INTERFACE
 export default function Header() {
-  /** Top header with search input and profile placeholder. */
+  /** Top header with search input and account menu (logout) when authenticated. */
   const router = useRouter();
   const params = useSearchParams();
   const [q, setQ] = useState(params.get("q") || "");
+  const { user, supabaseAvailable } = useAuth();
+  const supabase = getSupabaseClient();
 
   useEffect(() => {
     setQ(params.get("q") || "");
@@ -22,6 +26,12 @@ export default function Header() {
     if (q) next.set("q", q);
     else next.delete("q");
     router.push(`/notes?${next.toString()}`);
+  };
+
+  const onLogout = async () => {
+    if (!supabase) return;
+    await supabase.auth.signOut();
+    router.replace("/auth");
   };
 
   return (
@@ -44,10 +54,22 @@ export default function Header() {
         <Link className="button" href="/notes">
           Notes
         </Link>
-        <div
-          className="w-8 h-8 rounded-full bg-gray-200 border border-gray-300"
-          aria-label="Profile"
-        />
+        {supabaseAvailable ? (
+          user ? (
+            <div className="flex items-center gap-2">
+              <span className="text-sm muted max-w-[180px] truncate" title={user.email || ""}>
+                {user.email}
+              </span>
+              <button className="button" onClick={() => void onLogout()}>Logout</button>
+            </div>
+          ) : (
+            <Link className="button" href="/auth">
+              Sign In
+            </Link>
+          )
+        ) : (
+          <span className="text-xs muted">Auth disabled</span>
+        )}
       </div>
     </header>
   );

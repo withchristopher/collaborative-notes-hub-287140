@@ -7,7 +7,7 @@ import { useState } from "react";
 
 // PUBLIC_INTERFACE
 export default function NotesClient() {
-  /** Client-side Notes page that handles creation and reads search params within Suspense boundary provided by the route. */
+  /** Client-side Notes page that handles creation and reads search params within Suspense boundary provided by the route. Protected when Supabase is enabled. */
   const [creating, setCreating] = useState(false);
   const router = useRouter();
   const params = useSearchParams();

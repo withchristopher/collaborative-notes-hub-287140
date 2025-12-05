@@ -9,7 +9,8 @@ export default function Home() {
   return (
     <Suspense fallback={<div className="muted p-6">Loading…</div>}>
       {(() => {
-        // Redirect to /notes for main list view
+        // Redirect to /notes for main list view; if auth is enabled and user not logged in,
+        // the /notes page will redirect to /auth via client-side guard.
         redirect("/notes");
         // Return a fragment to satisfy the JSX return type, though redirect will throw
         return <></>;

@@ -2,13 +2,25 @@ import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
 let supabase: SupabaseClient | null = null;
 
-function init() {
+/**
+ * Initializes the Supabase client if env vars are available.
+ * Returns null if envs are missing or client creation fails.
+ */
+function init(): SupabaseClient | null {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_KEY;
-  // Supabase is optional: if either value is missing, return null gracefully.
-  if (!url || !key) return null;
+  if (!url || !key) {
+    // Graceful: do not throw if not configured
+    return null;
+  }
   try {
-    supabase = createClient(url, key);
+    supabase = createClient(url, key, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+      },
+    });
     return supabase;
   } catch {
     return null;
@@ -19,8 +31,7 @@ function init() {
 export function getSupabaseClient(): SupabaseClient | null {
   /**
    * Returns a Supabase client if env variables are present; otherwise null.
-   * When deployed, ensure NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_KEY
-   * are set if using Supabase features.
+   * When deployed, ensure NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_KEY are set if using Supabase features.
    */
   if (supabase) return supabase;
   return init();

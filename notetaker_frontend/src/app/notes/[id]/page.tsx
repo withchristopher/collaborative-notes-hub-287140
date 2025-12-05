@@ -1,5 +1,6 @@
 import NoteEditor from "@/components/NoteEditor";
 import { api } from "@/lib/api";
+import RequireAuth from "@/components/RequireAuth";
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -21,13 +22,15 @@ async function fetchNote(id: string) {
 
 // PUBLIC_INTERFACE
 export default async function NoteDetailPage({ params }: Props) {
-  /** Displays a single note and allows editing with optimistic updates. */
+  /** Displays a single note and allows editing with optimistic updates. Protected when Supabase is enabled. */
   const { id } = await params;
   const data = await fetchNote(id);
 
   return (
-    <div className="space-y-4">
-      <NoteEditor noteId={id} initialNote={data} />
-    </div>
+    <RequireAuth>
+      <div className="space-y-4">
+        <NoteEditor noteId={id} initialNote={data} />
+      </div>
+    </RequireAuth>
   );
 }

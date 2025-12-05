@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import Sidebar from "@/components/Sidebar";
 import Header from "@/components/Header";
+import AuthProvider from "@/components/AuthProvider";
 
 export const metadata: Metadata = {
   title: "Collaborative Notes",
@@ -25,17 +26,19 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body suppressHydrationWarning>
-        <div className="app-shell">
-          <aside className="sidebar">
-            <Sidebar />
-          </aside>
-          <section className="flex flex-col min-h-dvh">
-            <div className="topbar">
-              <Header />
-            </div>
-            <main className="flex-1 p-6">{children}</main>
-          </section>
-        </div>
+        <AuthProvider>
+          <div className="app-shell">
+            <aside className="sidebar">
+              <Sidebar />
+            </aside>
+            <section className="flex flex-col min-h-dvh">
+              <div className="topbar">
+                <Header />
+              </div>
+              <main className="flex-1 p-6">{children}</main>
+            </section>
+          </div>
+        </AuthProvider>
       </body>
     </html>
   );

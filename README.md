@@ -22,7 +22,11 @@ If `DATABASE_URL` is not set, the backend may attempt to parse `db_connection.tx
 NEXT_PUBLIC_API_BASE=http://localhost:3001
 NEXT_PUBLIC_FRONTEND_URL=http://localhost:3000
 ```
-Supabase is optional (leave blank if not used).
+Supabase is optional (leave blank if not used). To enable auth, also set:
+```
+NEXT_PUBLIC_SUPABASE_URL=<your-supabase-url>
+NEXT_PUBLIC_SUPABASE_KEY=<your-supabase-anon-key>
+```
 
 4) Run services:
 - Start database
@@ -34,6 +38,7 @@ Supabase is optional (leave blank if not used).
 - Edit: Change title/content, Save, refresh and verify persistence.
 - Search: Use the header search to filter notes.
 - View history (basic): Ensure the “Last edited” timestamp updates after changes.
+- Auth (if enabled): Sign in on `/auth`, see header account info, logout.
 
 ## Notes
 - CORS: Backend should include `ALLOWED_ORIGINS=http://localhost:3000` for local dev.
