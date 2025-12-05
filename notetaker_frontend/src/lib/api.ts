@@ -1,4 +1,4 @@
-/**
+ /**
 E2E Smoke Checklist (manual):
 - Create note: api.createNote({ title: "Untitled" }) -> navigate to /notes/:id
 - Edit: api.updateNote(id, { title, content }) -> refresh -> persistence confirmed
@@ -7,14 +7,25 @@ E2E Smoke Checklist (manual):
 */
 export type ListNotesParams = { q?: string; tag?: string };
 
+/**
+ * Resolve the backend base URL from environment variables.
+ * This must point to the FastAPI backend (e.g., http://localhost:3001).
+ * We purposefully DO NOT fall back to a relative path because that would
+ * incorrectly hit the Next.js app on port 3000 and lead to 405 responses.
+ */
 function getBaseUrl(): string {
   const base =
     process.env.NEXT_PUBLIC_API_BASE ||
     process.env.NEXT_PUBLIC_BACKEND_URL ||
     "";
-  if (base) return base.replace(/\/+$/, "");
-  // Fallback to relative path assuming reverse proxy to backend
-  return "";
+
+  if (!base) {
+    // Provide a clear diagnostic error to surface misconfiguration fast.
+    throw new Error(
+      "Backend URL missing. Set NEXT_PUBLIC_API_BASE (recommended) or NEXT_PUBLIC_BACKEND_URL to your FastAPI URL, e.g. http://localhost:3001"
+    );
+  }
+  return base.replace(/\/*$/, "");
 }
 
 type AbortControllerWithTimeout = AbortController & {
@@ -32,6 +43,20 @@ async function http<T>(path: string, init?: RequestInit & { timeoutMs?: number }
   const base = getBaseUrl();
   const url = `${base}${path}`;
   const controller = withAbortSignal(init?.timeoutMs);
+
+  // Lightweight dev logging to help diagnose 405/URL issues without noisy production logs
+  if (typeof window !== "undefined" && process.env.NODE_ENV !== "production") {
+    // eslint-disable-next-line no-console
+    console.debug("[api] request", {
+      method: init?.method || "GET",
+      url,
+      payloadPreview:
+        init?.body && typeof init.body === "string"
+          ? init.body.slice(0, 200)
+          : undefined,
+    });
+  }
+
   try {
     const res: Response = await fetch(url, {
       ...init,
@@ -136,6 +161,12 @@ async function updateNote(id: string, payload: UpdateNotePayload): Promise<Note>
 
 async function deleteNote(id: string): Promise<void> {
   await http<void>(`/notes/${encodeURIComponent(id)}`, { method: "DELETE" });
+}
+
+/** Helper to expose the resolved backend base URL for components that need to make ad-hoc fetches. */
+// PUBLIC_INTERFACE
+export function getApiBase(): string {
+  return getBaseUrl();
 }
 
 // PUBLIC_INTERFACE

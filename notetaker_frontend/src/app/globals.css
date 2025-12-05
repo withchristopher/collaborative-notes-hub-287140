@@ -114,7 +114,7 @@ body {
 
 /* Editor */
 .editor {
-  border: 1px solid #e5e7eb;
+  border: 1px solid #e2e8f0; /* slightly clearer edge */
   border-radius: var(--radius-md);
   background: white;
   box-shadow: var(--shadow-sm);
@@ -125,6 +125,13 @@ body {
 .input.text-lg {
   padding-top: 0.55rem;
   padding-bottom: 0.55rem;
+}
+
+/* Editor textarea tweaks */
+.editor textarea {
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  font-size: 0.98rem;
 }
 
 .button {

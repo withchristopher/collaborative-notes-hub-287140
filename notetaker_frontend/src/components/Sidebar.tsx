@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { useAuth } from "./AuthProvider";
+import { getApiBase } from "@/lib/api";
 
 type Tag = { id: string; name: string; count?: number };
 
@@ -126,16 +127,4 @@ export default function Sidebar() {
   );
 }
 
-function getApiBase(): string {
-  const a =
-    process.env.NEXT_PUBLIC_API_BASE ||
-    process.env.NEXT_PUBLIC_BACKEND_URL ||
-    "";
-  try {
-    // ensure absolute or relative root path
-    if (!a) return "/";
-    return new URL(a, typeof window === "undefined" ? "http://localhost" : window.location.origin).toString();
-  } catch {
-    return "/";
-  }
-}
+
