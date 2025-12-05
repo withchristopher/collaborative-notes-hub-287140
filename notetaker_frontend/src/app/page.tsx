@@ -1,6 +1,9 @@
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
+// Force dynamic rendering to avoid static export and CSR bailout issues
+export const dynamic = "force-dynamic";
+
 export default function Home() {
   // Wrap in Suspense to satisfy Next.js CSR bailout guidance when client hooks are used downstream
   return (

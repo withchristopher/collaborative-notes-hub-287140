@@ -1,8 +1,11 @@
-"use client";
+import React from "react";
 
-import React, { Suspense } from "react";
+// Ensure this page is dynamically rendered to avoid static prerender issues
+export const dynamic = "force-dynamic";
 
-function NotFoundContent() {
+// PUBLIC_INTERFACE
+export default function NotFound() {
+  /** 404 page rendered dynamically at runtime. */
   return (
     <main className="min-h-dvh flex items-center justify-center p-6">
       <section className="card p-6 max-w-lg w-full text-center" role="alert" aria-live="assertive">
@@ -12,13 +15,5 @@ function NotFoundContent() {
         </p>
       </section>
     </main>
-  );
-}
-
-export default function NotFound() {
-  return (
-    <Suspense fallback={<main className="min-h-dvh flex items-center justify-center p-6"><p className="muted">Loading…</p></main>}>
-      <NotFoundContent />
-    </Suspense>
   );
 }

@@ -41,11 +41,15 @@ export default function NoteList() {
       try {
         const data = await api.listNotes({ q, tag });
         if (!mounted) return;
-        setNotes(data);
+        // Normalize to array at the boundary as an extra guard
+        const safe = Array.isArray(data) ? data : [];
+        setNotes(safe);
       } catch (e) {
         if (!mounted) return;
         const msg = e instanceof Error ? e.message : "Failed to load notes";
         setError(msg);
+        // Ensure empty array to avoid render errors on failure state
+        setNotes([]);
       } finally {
         if (mounted) setLoading(false);
       }
@@ -56,7 +60,10 @@ export default function NoteList() {
     };
   }, [q, tag]);
 
-  const items = useMemo(() => notes, [notes]);
+  // Ensure items is always an array for rendering
+  const items = useMemo<Note[]>(() => {
+    return Array.isArray(notes) ? notes : [];
+  }, [notes]);
 
   return (
     <section aria-busy={loading} aria-live="polite" className="space-y-3">

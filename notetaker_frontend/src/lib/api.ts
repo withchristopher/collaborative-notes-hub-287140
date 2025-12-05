@@ -69,7 +69,40 @@ async function listNotes(params: ListNotesParams = {}): Promise<Note[]> {
   if (params.q) usp.set("q", params.q);
   if (params.tag) usp.set("tag", params.tag);
   const qs = usp.toString();
-  return http<Note[]>(`/notes${qs ? `?${qs}` : ""}`, { method: "GET" });
+
+  // Fetch raw response; backend may return either:
+  // - Note[] (array)
+  // - { items: Note[], total?: number } (object wrapper)
+  const raw = await http<unknown>(`/notes${qs ? `?${qs}` : ""}`, { method: "GET" });
+
+  // Types to help with safe narrowing
+  type UnknownRecord = Record<string, unknown>;
+  type NoteLike = UnknownRecord;
+
+  // Normalize to Note[] defensively at runtime
+  try {
+    if (Array.isArray(raw)) {
+      // Ensure elements are objects with id field, filter out invalid entries
+      const arr = (raw as unknown[]).filter(
+        (x): x is NoteLike => !!x && typeof x === "object" && "id" in (x as UnknownRecord)
+      );
+      return arr as unknown as Note[];
+    }
+    if (raw && typeof raw === "object") {
+      const obj = raw as UnknownRecord;
+      const items = (obj as { items?: unknown }).items;
+      if (Array.isArray(items)) {
+        const filtered = items.filter(
+          (x): x is NoteLike => !!x && typeof x === "object" && "id" in (x as UnknownRecord)
+        );
+        return filtered as unknown as Note[];
+      }
+    }
+  } catch {
+    // fall through to return empty array
+  }
+  // Fallback to empty list if shape not recognized
+  return [];
 }
 
 async function getNote(id: string): Promise<Note> {
